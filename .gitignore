@@ -205,3 +205,15 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+# ---------------------------------------------------
+# Local settings for Claude
+# ---------------------------------------------------
+.claude/settings.local.json
+
+# ---------------------------------------------------
+# Few other files that may contain sensitive information
+# ---------------------------------------------------
+Cloud-Credentials.md
+shop-sense-botai-settings.json
