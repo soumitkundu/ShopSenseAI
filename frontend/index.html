@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ShopSense AI</title>
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+
+    <div class="app-shell">
+
+        <!-- ── Sidebar ───────────────────────────────────── -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-name">ShopSense AI</div>
+                <div class="brand-sub">Multimodal product recommender</div>
+            </div>
+
+            <div class="section-label">Input mode</div>
+            <nav class="mode-nav">
+                <button class="mode-btn active" data-mode="text">
+                    <span class="mode-dot dot-text"></span> Text chat
+                </button>
+                <button class="mode-btn" data-mode="voice">
+                    <span class="mode-dot dot-voice"></span> Voice input
+                </button>
+                <button class="mode-btn" data-mode="image">
+                    <span class="mode-dot dot-image"></span> Image upload
+                </button>
+            </nav>
+
+            <div class="section-label" style="margin-top:20px">Session</div>
+            <div class="session-id" id="session-display"></div>
+
+            <button class="clear-btn" id="clear-btn">Clear session</button>
+
+            <div class="sidebar-footer">
+                Powered by<br>
+                Azure OpenAI (GPT-4)<br>
+                Azure Speech SDK<br>
+                Azure Computer Vision<br>
+                Azure Language Service
+            </div>
+        </aside>
+
+        <!-- ── Main chat area ────────────────────────────── -->
+        <main class="chat-main">
+
+            <header class="chat-header">
+                <div class="chat-header-left">
+                    <span class="chat-title">Product recommendations based on your shopping sense.</span>
+                </div>
+                <span class="mode-badge" id="mode-badge">Text mode</span>
+            </header>
+
+            <section class="messages" id="messages">
+                <!-- Welcome message injected by JS -->
+            </section>
+
+            <footer class="input-area">
+
+                <!-- Modality pill switcher -->
+                <div class="modality-bar">
+                    <button class="mod-pill active" data-mode="text">Text</button>
+                    <button class="mod-pill" data-mode="voice">Voice</button>
+                    <button class="mod-pill" data-mode="image">Image</button>
+                </div>
+
+                <!-- TEXT input panel -->
+                <div class="input-panel" id="panel-text">
+                    <div class="input-row">
+                        <input type="text" id="text-input" placeholder="Describe what you're looking for..."
+                            autocomplete="off" />
+                        <button class="send-btn" id="send-text-btn" title="Send">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M2 8h12M10 4l6 4-6 4" stroke="#fff" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- VOICE input panel -->
+                <div class="input-panel hidden" id="panel-voice">
+                    <div class="voice-panel">
+                        <button class="record-btn" id="record-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <rect x="8" y="2" width="8" height="13" rx="4" stroke="currentColor"
+                                    stroke-width="1.5" />
+                                <path d="M4 12a8 8 0 0016 0" stroke="currentColor" stroke-width="1.5" fill="none" />
+                                <line x1="12" y1="20" x2="12" y2="23" stroke="currentColor" stroke-width="1.5" />
+                            </svg>
+                            <span id="record-label">Hold to record</span>
+                        </button>
+                        <div class="voice-hint" id="voice-status">
+                            Press and hold the button, speak your query, then release
+                        </div>
+                        <input type="file" id="audio-file-input" accept="audio/*" style="display:none" />
+                        <button class="upload-audio-btn" id="upload-audio-btn">
+                            Or upload a WAV file
+                        </button>
+                    </div>
+                </div>
+
+                <!-- IMAGE input panel -->
+                <div class="input-panel hidden" id="panel-image">
+                    <div class="image-panel">
+                        <div class="drop-zone" id="drop-zone">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                                <rect x="3" y="3" width="18" height="14" rx="2" stroke="currentColor"
+                                    stroke-width="1" />
+                                <circle cx="8" cy="8" r="1.5" fill="currentColor" />
+                                <path d="M3 14l4-4 4 3.5 4-5.5 6 6" stroke="currentColor" stroke-width="1"
+                                    fill="none" />
+                            </svg>
+                            <p>Drag &amp; drop a product image<br>
+                                <span>or click to browse</span>
+                            </p>
+                            <input type="file" id="image-input" accept="image/jpeg,image/png,image/webp" />
+                        </div>
+                        <div class="image-preview-row hidden" id="image-preview-row">
+                            <img id="image-preview" src="" alt="preview" />
+                            <button class="analyse-btn" id="analyse-btn">
+                                Analyse &amp; recommend
+                            </button>
+                            <button class="remove-img-btn" id="remove-img-btn">Remove</button>
+                        </div>
+                    </div>
+                </div>
+
+            </footer>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+
+</html>
