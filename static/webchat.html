@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ShopSense AI — Web Chat</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, sans-serif;
+            background: #f5f4f0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        header {
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a18;
+        }
+
+        header p {
+            font-size: 13px;
+            color: #5a5a57;
+            margin-top: 4px;
+        }
+
+        #webchat {
+            width: 100%;
+            max-width: 680px;
+            height: 70vh;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 0.5px solid rgba(0, 0, 0, 0.12);
+            background: #fff;
+        }
+
+        .powered-by {
+            font-size: 11px;
+            color: #9a9994;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>ShopSense AI</h1>
+        <p>Multimodal product recommendation bot — powered by Azure AI</p>
+    </header>
+
+    <div id="webchat"></div>
+
+    <p class="powered-by">
+        Azure OpenAI (GPT-4o-mini) &nbsp;·&nbsp; Azure Speech &nbsp;·&nbsp;
+        Azure Computer Vision &nbsp;·&nbsp; Azure Language
+    </p>
+
+    <script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
+    <script>
+        const SECRET = "WEB_CHAT_SECRET_KEY";
+
+        async function initWebChat() {
+            const res = await fetch(
+                `https://directline.botframework.com/v3/directline/tokens/generate`,
+                {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${SECRET}` },
+                }
+            );
+            const { token } = await res.json();
+
+            window.WebChat.renderWebChat(
+                {
+                    directLine: window.WebChat.createDirectLine({ token }),
+                    styleOptions: {
+                        botAvatarInitials: "SS",
+                        userAvatarInitials: "You",
+                        accent: "#378ADD",
+                        botMessageBackground: "#f5f4f0",
+                        userMessageBackground: "#378ADD",
+                        userMessageTextColor: "#ffffff",
+                        fontSizeSmall: "12px",
+                        bubbleBorderRadius: 12,
+                        bubbleFromUserBorderRadius: 12,
+                    },
+                },
+                document.getElementById("webchat")
+            );
+        }
+
+        initWebChat();
+    </script>
+</body>
+
+</html>
