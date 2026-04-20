@@ -2,10 +2,13 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from config import Config
 from bot.bot_handler import ShopSenseBot
 from services.speech_service import text_to_speech_bytes
+import os
 
 # ── Validate credentials at startup ───────────────────────────────
 Config.validate()
@@ -25,6 +28,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ── Serve static frontend files ────────────────────────────────────
+STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+@app.get("/", include_in_schema=False)
+async def serve_frontend():
+    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+
+# ── Bot and session setup ──────────────────────────────────────────
 bot = ShopSenseBot()
 
 # ── In-memory session store ────────────────────────────────────────
@@ -99,7 +111,7 @@ async def chat_voice(
     Voice modality endpoint.
     Accepts a WAV audio upload, transcribes it, and returns:
     - transcript: what the bot heard
-    - recommendation: GPT-4 product recommendation
+    - recommendation: GPT-4o-mini product recommendation
     - audio_url: hint to call /tts with the recommendation text
     """
     if not audio_file.content_type.startswith("audio/"):

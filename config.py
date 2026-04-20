@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-# Load .env from the backend/ directory
+# Load .env from project root
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 
 
@@ -46,6 +46,6 @@ class Config:
             raise EnvironmentError(
                 f"\n❌ Missing required environment variables:\n"
                 + "\n".join(f"   - {k}" for k in missing)
-                + "\n\nCheck your backend/.env file."
+                + "\n\nCheck your .env file."
             )
         print("✅ All Azure credentials loaded successfully.")
