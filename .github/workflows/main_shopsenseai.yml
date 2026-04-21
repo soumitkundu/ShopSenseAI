@@ -2,7 +2,7 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 # More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
 
-name: Deploy Multi-modal Recommendation Chatbot to Azure - ShopSense AI
+name: Build and deploy Python app to Azure Web App - shopsenseai
 
 on:
   push:
@@ -17,10 +17,9 @@ jobs:
       contents: read #This is required for actions/checkout
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: Set up Python version
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -31,15 +30,9 @@ jobs:
         run: |
           python -m venv antenv
           source antenv/bin/activate
-          pip install --upgrade pip
           pip install -r requirements.txt
                 
-      # By default, when you enable GitHub CI/CD integration through the Azure portal, 
-      # the platform automatically sets the SCM_DO_BUILD_DURING_DEPLOYMENT application 
-      # setting to true. This triggers the use of Oryx, a build engine that handles application 
-      # compilation and dependency installation (e.g., pip install) directly on the platform 
-      # during deployment. Hence, we exclude the antenv virtual environment directory 
-      # from the deployment artifact to reduce the payload size. 
+      # By default, when you enable GitHub CI/CD integration through the Azure portal, the platform automatically sets the SCM_DO_BUILD_DURING_DEPLOYMENT application setting to true. This triggers the use of Oryx, a build engine that handles application compilation and dependency installation (e.g., pip install) directly on the platform during deployment. Hence, we exclude the antenv virtual environment directory from the deployment artifact to reduce the payload size. 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
@@ -58,8 +51,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      id-token: write    # This is required for requesting the JWT
-      contents: read     # This is required for actions/checkout
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
 
     steps:
       - name: Download artifact from build job
