@@ -2,6 +2,13 @@
 
 A Multimodal Personalized Shopping Assistant that uses voice, text, and image inputs to understand user intent, extract preferences, and generate context-aware, real-time product recommendations.
 
+A **high-level system architecture** showing how all Azure components connect:
+
+![system architecture](demo_screen/image-system-architecture.png)
+
+**User interaction flowchart — the decision-tree flow**
+
+![decision-tree flowchart](demo_screen/decision-tree-flowchart.png)
 
 ### Project Structure
 
@@ -31,4 +38,10 @@ ShopSenseAI/
 ├── .env
 ├── .gitignore
 └── startup.sh
+```
+
+Run the Application:
+
+```
+py app.py
 ```
