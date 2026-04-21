@@ -312,5 +312,3 @@ This project is licensed under the MIT License.
 ---
 
 <p align="center">Built with Azure AI · FastAPI · GPT-4o-mini · Python 3.11</p>
-
-_No change only checking if Federated Credential works correctly in GitHub Action for Azure Login_
