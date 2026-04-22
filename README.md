@@ -37,6 +37,8 @@ Every query is processed through a pipeline of Azure AI services before reaching
 
 ## Architecture
 
+![high-level system architecture](demo_screen/high-level-system-architecture.png)
+
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                        User Browser                          │
@@ -84,6 +86,12 @@ Every query is processed through a pipeline of Azure AI services before reaching
 | **Hosting** | Azure App Service (Linux, Python 3.11) |
 | **CI/CD** | GitHub Actions + Azure Service Principal |
 | **Config** | python-dotenv + Azure App Settings |
+
+---
+
+## Flowchart how user input is routed through the modality pipeline to GPT-4
+
+![modality pipeline flowchart](demo_screen/modality-pipeline-flowchart.png)
 
 ---
 
