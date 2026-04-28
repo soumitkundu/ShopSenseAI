@@ -9,6 +9,8 @@ let selectedImage = null;
 let mediaRecorder = null;
 let audioChunks = [];
 let isRecording = false;
+let recordedMimeType = "";
+let recordingStartedAt = 0;
 
 // ── DOM refs ──────────────────────────────────────────────────────
 const messagesEl = document.getElementById("messages");
@@ -164,16 +166,51 @@ textInput.addEventListener("keydown", e => { if (e.key === "Enter") sendText(); 
 // ── VOICE: record via MediaRecorder ──────────────────────────────
 async function startRecording() {
     try {
+        if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+            voiceStatus.textContent = "⚠️ Voice recording is not supported in this browser. Use WAV upload instead.";
+            return;
+        }
+
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
+        const supportedTypes = [
+            "audio/webm;codecs=opus",
+            "audio/webm",
+            "audio/mp4",
+            "audio/ogg;codecs=opus",
+        ];
+        const mimeType = supportedTypes.find(t => MediaRecorder.isTypeSupported(t));
+        mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        recordedMimeType = mediaRecorder.mimeType || "audio/webm";
         audioChunks = [];
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.ondataavailable = e => {
+            if (e.data && e.data.size > 0) audioChunks.push(e.data);
+        };
         mediaRecorder.onstop = async () => {
-            const blob = new Blob(audioChunks, { type: "audio/wav" });
             stream.getTracks().forEach(t => t.stop());
-            await sendVoice(blob);
+            try {
+                if (!audioChunks.length) {
+                    voiceStatus.textContent = "⚠️ No audio captured. Hold the button and speak clearly.";
+                    return;
+                }
+                const sourceBlob = new Blob(audioChunks, { type: recordedMimeType });
+                const recordingMs = Date.now() - recordingStartedAt;
+                if (recordingMs < 600) {
+                    voiceStatus.textContent = "⚠️ Recording too short. Hold for at least 1 second.";
+                    return;
+                }
+                const wavBlob = await convertToWavBlob(sourceBlob, 16000);
+                if (wavBlob.size < 3000) {
+                    voiceStatus.textContent = "⚠️ Audio is too quiet/short. Please speak louder and try again.";
+                    return;
+                }
+                await sendVoice(wavBlob);
+            } catch (err) {
+                console.error("Voice conversion failed:", err);
+                voiceStatus.textContent = "⚠️ Could not process recording. Please upload a WAV file.";
+            }
         };
         mediaRecorder.start();
+        recordingStartedAt = Date.now();
         isRecording = true;
         recordBtn.classList.add("recording");
         recordLabel.textContent = "Recording... release to send";
@@ -195,8 +232,94 @@ function stopRecording() {
 
 recordBtn.addEventListener("mousedown", startRecording);
 recordBtn.addEventListener("mouseup", stopRecording);
+recordBtn.addEventListener("mouseleave", stopRecording);
 recordBtn.addEventListener("touchstart", e => { e.preventDefault(); startRecording(); });
 recordBtn.addEventListener("touchend", stopRecording);
+
+async function convertToWavBlob(inputBlob, targetSampleRate = 16000) {
+    const arrayBuffer = await inputBlob.arrayBuffer();
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    try {
+        const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+        const normalized = await normalizeForSpeech(decodedBuffer, targetSampleRate);
+        const wavBuffer = audioBufferToWav(normalized);
+        return new Blob([wavBuffer], { type: "audio/wav" });
+    } finally {
+        await audioContext.close();
+    }
+}
+
+async function normalizeForSpeech(sourceBuffer, targetSampleRate) {
+    const frameCount = Math.ceil(sourceBuffer.duration * targetSampleRate);
+    const offlineContext = new OfflineAudioContext(1, frameCount, targetSampleRate);
+    const source = offlineContext.createBufferSource();
+
+    const monoBuffer = offlineContext.createBuffer(1, sourceBuffer.length, sourceBuffer.sampleRate);
+    const monoData = monoBuffer.getChannelData(0);
+    for (let i = 0; i < sourceBuffer.length; i += 1) {
+        let mixed = 0;
+        for (let ch = 0; ch < sourceBuffer.numberOfChannels; ch += 1) {
+            mixed += sourceBuffer.getChannelData(ch)[i];
+        }
+        monoData[i] = mixed / sourceBuffer.numberOfChannels;
+    }
+
+    source.buffer = monoBuffer;
+    source.connect(offlineContext.destination);
+    source.start(0);
+    return offlineContext.startRendering();
+}
+
+function audioBufferToWav(audioBuffer) {
+    const numChannels = audioBuffer.numberOfChannels;
+    const sampleRate = audioBuffer.sampleRate;
+    const format = 1; // PCM
+    const bitDepth = 16;
+
+    const channelData = [];
+    for (let i = 0; i < numChannels; i += 1) {
+        channelData.push(audioBuffer.getChannelData(i));
+    }
+
+    const samples = audioBuffer.length;
+    const blockAlign = numChannels * (bitDepth / 8);
+    const byteRate = sampleRate * blockAlign;
+    const dataLength = samples * blockAlign;
+    const buffer = new ArrayBuffer(44 + dataLength);
+    const view = new DataView(buffer);
+
+    writeAscii(view, 0, "RIFF");
+    view.setUint32(4, 36 + dataLength, true);
+    writeAscii(view, 8, "WAVE");
+    writeAscii(view, 12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, format, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitDepth, true);
+    writeAscii(view, 36, "data");
+    view.setUint32(40, dataLength, true);
+
+    let offset = 44;
+    for (let i = 0; i < samples; i += 1) {
+        for (let channel = 0; channel < numChannels; channel += 1) {
+            const sample = Math.max(-1, Math.min(1, channelData[channel][i]));
+            const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+            view.setInt16(offset, intSample, true);
+            offset += 2;
+        }
+    }
+
+    return buffer;
+}
+
+function writeAscii(view, offset, text) {
+    for (let i = 0; i < text.length; i += 1) {
+        view.setUint8(offset + i, text.charCodeAt(i));
+    }
+}
 
 // File upload fallback
 uploadAudioBtn.addEventListener("click", () => audioFileInput.click());
@@ -220,11 +343,11 @@ async function sendVoice(audioBlob) {
         // Show transcript + recommendation
         const transcriptHtml = `
       <div class="transcript-tag">🎤 Heard: "${escHtml(data.transcript)}"</div>`;
-        addUserMessage("", "You · Voice");
+        addUserMessage(data.transcript || "(voice message)", "You · Voice");
 
         // Fetch TTS audio for the response
         const audioExtras = await getTTSAudio(data.recommendation);
-        addBotMessage(data.recommendation, audioExtras);
+        addBotMessage(data.recommendation, transcriptHtml + audioExtras);
         voiceStatus.textContent = "Press and hold the button, speak your query, then release";
     } catch (e) {
         removeTypingIndicator();
